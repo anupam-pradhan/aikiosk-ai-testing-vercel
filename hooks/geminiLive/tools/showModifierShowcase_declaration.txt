@@ -1,0 +1,20 @@
+// showModifierShowcase - Tool for AI to showcase all modifiers
+{
+  name: "showModifierShowcase",
+  description: `
+Smoothly auto-scroll through all available modifiers to show the user all options.
+Use this ONLY when:
+1) Modifier screen is currently active
+2) User asks to see all options ("show me all", "what toppings do you have?", "let me see everything")
+3) There are many modifiers and user might benefit from seeing them all
+
+DO NOT use randomly or without user request. This should enhance the experience, not interrupt it.
+
+After calling this, wait 3-4 seconds for scroll to complete, then say something like:
+"That's all the options! Tell me what you'd like and I'll add them for you."
+`,
+  parameters: {
+    type: Type.OBJECT,
+    properties: {},
+  },
+},

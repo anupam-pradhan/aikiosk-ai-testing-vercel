@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">megaposaikiosk</string>
+    <string name="title_activity_main">megaposaikiosk</string>
+    <string name="package_name">app.megapos.aikiosk</string>
+    <string name="custom_url_scheme">app.megapos.aikiosk</string>
+</resources>

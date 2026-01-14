@@ -1,0 +1,7 @@
+{
+  "name": "AI Kiosk Assistant",
+  "description": "A voice-enabled self-service kiosk using Gemini Live API for ordering pizza and fast food.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

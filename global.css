@@ -1,0 +1,402 @@
+/* Stable full-height on mobile + prevent zoom-jank */
+:root {
+  --app-height: 100vh;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Prefer modern dynamic viewport units when available */
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
+/* Safe-area helpers */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent iOS tap zoom on inputs/buttons */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}
+
+/* scrollbar css */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* welcome overlay keyframe */
+/* 
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes rotate-gradient {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.8;
+  }
+}
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.2),
+      0 0 60px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.3),
+      0 0 80px rgba(255, 255, 255, 0.15);
+  }
+}
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes icon-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+@keyframes ripple-1 {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+@keyframes ripple-2 {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+} */
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}
+.animate-spin-reverse {
+  animation: spin-reverse 20s linear infinite;
+}
+.animate-rotate-gradient {
+  animation: rotate-gradient 8s ease-in-out infinite;
+}
+.animate-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+.animate-icon-pulse {
+  animation: icon-pulse 2s ease-in-out infinite;
+}
+.animate-ripple-1 {
+  animation: ripple-1 3s ease-out infinite;
+}
+.animate-ripple-2 {
+  animation: ripple-2 3s ease-out 1.5s infinite;
+}
+
+/* finish order button css */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.6), 0 0 60px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.finish-button-active {
+  background: linear-gradient(
+    135deg,
+    rgb(22, 163, 74) 0%,
+    rgb(34, 197, 94) 45%,
+    rgb(74, 222, 128) 50%,
+    rgb(34, 197, 94) 55%,
+    rgb(22, 163, 74) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite, pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes sheetIn {
+  0% {
+    transform: translateY(100%) scale(0.98);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-sheetIn {
+  animation: sheetIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes moveRight {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes shimmer-effect {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(150%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes ai-pop {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0px rgba(249, 115, 22, 0);
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15),
+      0 10px 30px rgba(249, 115, 22, 0.3), 0 20px 60px rgba(0, 0, 0, 0.1);
+    filter: brightness(1.05) saturate(1.1);
+  }
+  75% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 6px rgba(249, 115, 22, 0.1),
+      0 15px 40px rgba(249, 115, 22, 0.2), 0 30px 80px rgba(0, 0, 0, 0.15);
+    filter: brightness(1.05) saturate(1.1);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0px rgba(249, 115, 22, 0);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+.shimmer-effect {
+  position: absolute;
+  top: -50%;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.4) 45%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.4) 55%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  animation: shimmer-effect 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+  z-index: 100;
+  filter: blur(2px);
+}
+
+.animate-ai-trigger {
+  animation: ai-pop 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 50;
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 768px) {
+  @keyframes ai-pop {
+    30% {
+      transform: scale(1.02);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2),
+        0 5px 15px rgba(249, 115, 22, 0.3);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0px rgba(249, 115, 22, 0);
+    }
+  }
+}
+/* ================================
+   1. DEFAULT (DESKTOP MODE) */
+
+.mobile-cart-only {
+  display: none !important;
+}
+
+.desktop-cart-only {
+  display: block !important;
+}
+
+/* ================================
+   2. MOBILE PHONES (Standard) */
+@media (max-width: 767px) {
+  .mobile-cart-only {
+    /* We restore flex because your button needs flex to center the icon */
+    display: flex !important;
+  }
+
+  .desktop-cart-only {
+    display: none !important;
+  }
+}
+
+/* ================================
+   3. PORTRAIT TOUCH KIOSK (1080x1920) */
+@media (min-width: 1070px) and (max-width: 1085px) /* Slightly increased range for safety */ and (min-height: 1700px) /* Slightly lowered to catch browser bars */ and (orientation: portrait) {
+  .mobile-cart-only {
+    display: flex !important;
+  }
+
+  .desktop-cart-only {
+    display: none !important;
+  }
+}
+
+/* .cart-sidebar-1080 {
+  display: none;
+}
+
+
+@media (min-width: 1070px) and (max-width: 1090px) {
+
+
+  .cart-sidebar-default {
+    display: none !important;
+  }
+
+
+  .cart-sidebar-1080 {
+    display: block !important;
+    position: relative;
+  }
+
+  
+
+  .cart-sidebar-1080 .cart-bottom-wrapper {
+    position: fixed;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    height: 20vh;
+    max-height: 20vh;
+    z-index: 99 !important;
+    background-color: rgb(229 231 235);
+    border: 1px solid rgba(178, 178, 178, 0.785);
+  }
+
+  .cart-sidebar-1080 .cart-items-list {
+    flex: 0 0 65%;
+    max-width: 65%;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  .cart-sidebar-1080 .cart-footer {
+    flex: 0 0 35%;
+    max-width: 35%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .portrait-screen{
+    padding-bottom: 400px !important;
+  }
+
+  .cart-sidebar-1080 .absolute.inset-0.z-30 {
+    position: fixed !important;
+    inset: 0 !important;
+  }
+
+  .cart-sidebar-1080 .absolute.inset-0.z-40 {
+    position: fixed !important;
+    inset: 0 !important;
+  }
+}
+
+ */
