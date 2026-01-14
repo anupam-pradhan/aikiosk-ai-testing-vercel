@@ -381,6 +381,23 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
     },
     [categories]
   );
+
+  // Ensure selected category stays in sync with freshly loaded menus
+  useEffect(() => {
+    if (!menu?.categorylist?.length) {
+      setSelectedCategory(null);
+      return;
+    }
+
+    const currentId = selectedCategory?.id;
+    const exists =
+      currentId != null &&
+      menu.categorylist.some((c: any) => String(c.id) === String(currentId));
+
+    if (!exists) {
+      setSelectedCategory(menu.categorylist[0]);
+    }
+  }, [menu, selectedCategory?.id]);
   // ---------------- Cart ops ----------------
 
   const addToCart = (

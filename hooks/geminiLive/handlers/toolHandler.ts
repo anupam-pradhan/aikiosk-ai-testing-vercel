@@ -122,7 +122,7 @@ export const createToolHandler = (
           } catch (e) {
             derr("Error switching category", e);
           }
-          result = `CATEGORY_SHOWN:${directCategory.name}`;
+          result = `CATEGORY_SHOWN:${directCategory.name}. DO_NOT_LIST_ITEMS. REPLY_SHORT:"Here are the ${directCategory.name} again."`;
           return;
         } else {
           let itemInfo = null;
@@ -483,7 +483,11 @@ export const createToolHandler = (
                           qtyToAdd,
                           finalItemNote
                         );
-                        result = `ADDED:${item.name}. SCREEN_READY. MUST_ASK: "Anything else?"`;
+                        result = `ADDED:${
+                          item.name
+                        }. SCREEN_READY. MUST_ASK: "Anything else?" MULTI_ADD_SUMMARY_HINT:"If several items were added this turn, say 'Added ${
+                          ctx.cart?.length ?? 1
+                        } items' instead of listing them."`;
                       } else {
                         result = "ERROR:addToCart not available";
                       }
@@ -573,7 +577,11 @@ export const createToolHandler = (
                           if (typeof ctx.setActiveNote === "function")
                             ctx.setActiveNote("");
                           dlog(`✅ added simple item ${item.name}`);
-                          result = `ADDED:${item.name}. SCREEN_READY. MUST_ASK: "Anything else?"`;
+                          result = `ADDED:${
+                            item.name
+                          }. SCREEN_READY. MUST_ASK: "Anything else?" MULTI_ADD_SUMMARY_HINT:"If several items were added this turn, say 'Added ${
+                            ctx.cart?.length ?? 1
+                          } items' instead of listing them."`;
                         } catch (e) {
                           derr("add simple error", e);
                           result = "ADD_FAILED";
@@ -842,17 +850,23 @@ export const createToolHandler = (
         }, 0);
 
         const total = (calculatedTotal / 100).toFixed(2);
-        const itemNames = cart
-          .map((i: any) => {
-            const mods =
-              i.modifiers && i.modifiers.length > 0
-                ? ` (+${i.modifiers.map((m: any) => m.name).join(", ")})`
-                : "";
-            return `${i.qty}x ${i.name}${mods}`;
-          })
-          .join(", ");
+        // Concise cart summary with per-item totals (cap at 3 entries)
+        const maxList = 3;
+        const entries = cart.slice(0, maxList).map((i: any) => {
+          const itemTotal = ((i.total || 0) / 100).toFixed(2);
+          return `${i.qty}x ${i.name} (£${itemTotal})`;
+        });
+        const remaining = cart.length > maxList ? cart.length - maxList : 0;
+        const summary =
+          entries.join(", ") + (remaining ? `, +${remaining} more` : "");
 
-        result = `OPENED_CART_DRAWER: Success. Cart Items: [${itemNames}]. Total: £${total}`;
+        result = `OPENED_CART_DRAWER: Success. CartCount:${
+          cart.length
+        }. Total: £${total}. CART_SUMMARY:${summary}. REPLY_SHORT:"You have ${
+          cart.length
+        } item(s), total £${total}. ${
+          entries.length ? "Items: " + entries.join(", ") : ""
+        }${remaining ? " plus " + remaining + " more." : ""}"`;
       } catch (e) {
         derr("showCart error", e);
         result = "Show cart failed";
@@ -1004,7 +1018,11 @@ export const createToolHandler = (
             if (hasModifiers) {
               result = `WIZARD_STARTED:SELECT_MODIFIERS:${item.name}`;
             } else {
-              result = `ADDED:${item.name}. SCREEN_READY. MUST_ASK: "Anything else?"`;
+              result = `ADDED:${
+                item.name
+              }. SCREEN_READY. MUST_ASK: "Anything else?" MULTI_ADD_SUMMARY_HINT:"If several items were added this turn, say 'Added ${
+                ctx.cart?.length ?? 1
+              } items' instead of listing them."`;
             }
           } else {
             result = `WIZARD_STARTED:${item.name}`;
@@ -1061,7 +1079,11 @@ export const createToolHandler = (
             if (hasModifiers) {
               result = `VARIANT_SELECTED:${targetVariant.name}. SELECT_MODIFIERS:${item.name}`;
             } else {
-              result = `ADDED:${item.name} (${targetVariant.name}). SCREEN_READY. MUST_ASK: "Anything else?"`;
+              result = `ADDED:${item.name} (${
+                targetVariant.name
+              }). SCREEN_READY. MUST_ASK: "Anything else?" MULTI_ADD_SUMMARY_HINT:"If several items were added this turn, say 'Added ${
+                ctx.cart?.length ?? 1
+              } items' instead of listing them."`;
             }
           } catch (e) {
             derr("selectVariant error", e);
@@ -1304,7 +1326,7 @@ export const createToolHandler = (
         } catch (e) {
           derr("changeCategory set error", e);
         }
-        result = `CATEGORY_SHOWN:${cat.name}`;
+        result = `CATEGORY_SHOWN:${cat.name}. DO_NOT_LIST_ITEMS. REPLY_SHORT:"Here are the ${cat.name} again."`;
       } else {
         const availableCats =
           ctx.menu?.categorylist?.map((c: any) => c.name).join(", ") || "";
