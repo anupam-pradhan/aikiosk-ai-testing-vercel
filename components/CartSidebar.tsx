@@ -4,46 +4,143 @@ import { useAnimation } from "../context/AnimationContext";
 import CheckoutFlow from "./CheckoutFlow";
 import { APP_MODE, NEEDS_CHECKOUT_FLOW } from "../config/mode";
 import CashPaymentPopup from "./CashPaymentPopup";
+import { startTapToPay } from "../utils/flutterBridge";
 
 interface CartSidebarProps {
   onBack?: () => void;
 }
 
+const TAP_TO_PAY_SUCCESS_STATUSES = new Set([
+  "NATIVE_FAKE_PAID",
+  "PAID",
+  "paid",
+  "SUCCESS",
+  "success",
+  "successful",
+]);
+
+const TAP_TO_PAY_PENDING_STATUSES = new Set([
+  "READY",
+  "PROCESSING",
+  "REQUESTED",
+  "PENDING",
+  "IN_PROGRESS",
+]);
+
+const TAP_TO_PAY_FAILURE_STATUSES = new Set([
+  "FAILED",
+  "FAILURE",
+  "CANCELED",
+  "CANCELLED",
+  "COLLECT_FAILED",
+  "collect_failed",
+  "ERROR",
+  "error",
+]);
+
+const LOCATION_SERVICES_DISABLED_CODE = "LOCATION_SERVICES_DISABLED";
+const LOCATION_SERVICES_DISABLED_MESSAGE =
+  "Location must be enabled to use terminal.";
+const TAP_TO_PAY_CANCELLED_CODES = new Set([
+  "CANCELED",
+  "CANCELLED",
+  "COLLECT_FAILED",
+  "collect_failed",
+]);
+const TAP_TO_PAY_CANCELLED_MESSAGE = "Payment cancelled on terminal.";
+const CONTACTLESS_CANCELLED_MESSAGE = "Contactless payment was cancelled.";
+
 const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
   const [showCheckout, setShowCheckout] = useState(false);
   const { animatedItemId } = useAnimation();
   // Track number of clicks
-const [refreshCount, setRefreshCount] = useState(0);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const toMinor = (v: number) => Math.round((Number(v) || 0) * 100);
 
-// Logic: Reset the count if the user stops clicking for 2 seconds
-useEffect(() => {
-  if (refreshCount === 0) return;
+  // Logic: Reset the count if the user stops clicking for 2 seconds
+  useEffect(() => {
+    if (refreshCount === 0) return;
 
-  const timer = setTimeout(() => {
-    setRefreshCount(0); // Reset counter
-  }, 2000); // 2 seconds timeout
+    const timer = setTimeout(() => {
+      setRefreshCount(0); // Reset counter
+    }, 2000); // 2 seconds timeout
 
-  return () => clearTimeout(timer);
-}, [refreshCount]);
+    return () => clearTimeout(timer);
+  }, [refreshCount]);
 
-// The Click Handler
-const handleSafeRefresh = () => {
-  const targetClicks = 3; 
-  const newCount = refreshCount + 1;
-  setRefreshCount(newCount);
+  // The Click Handler
+  const handleSafeRefresh = () => {
+    const targetClicks = 3;
+    const newCount = refreshCount + 1;
+    setRefreshCount(newCount);
 
-  if (newCount >= targetClicks) {
-    window.location.reload();
-  }
-};
+    if (newCount >= targetClicks) {
+      window.location.reload();
+    }
+  };
 
   const [selectedEditCartId, setSelectedEditCartId] = useState<string | null>(
     null
   );
   const activeCardSession = useRef<string | null>(null);
+  const pendingTapSession = useRef<string | null>(null);
 
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [tempNote, setTempNote] = useState("");
+  const [cardErrorMessage, setCardErrorMessage] = useState("");
+  const [cardErrorCode, setCardErrorCode] = useState("");
+  const [nativeStatusLog, setNativeStatusLog] = useState("");
+  const [tapSuccess, setTapSuccess] = useState<{
+    paymentIntentId?: string;
+    amountMinor?: number;
+    currency?: string;
+  } | null>(null);
+  const getTapToPayStatus = (payload: any) =>
+    String(payload?.data?.status || payload?.status || "");
+  const getTapToPayErrorCode = (payload: any) => {
+    const code =
+      payload?.data?.code ||
+      payload?.code ||
+      payload?.data?.errorCode ||
+      payload?.errorCode ||
+      "";
+    if (code) return String(code);
+    const rawMessage = String(
+      payload?.data?.message || payload?.message || ""
+    ).toLowerCase();
+    if (rawMessage.includes("location") && rawMessage.includes("service")) {
+      return LOCATION_SERVICES_DISABLED_CODE;
+    }
+    const status = getTapToPayStatus(payload);
+    return TAP_TO_PAY_CANCELLED_CODES.has(status) ? status : "";
+  };
+  const getTapToPayErrorMessage = (payload: any, fallback: string) => {
+    const code = getTapToPayErrorCode(payload);
+    const status = getTapToPayStatus(payload);
+    const rawMessage = payload?.data?.message || payload?.message || "";
+    const messageLower = String(rawMessage).toLowerCase();
+
+    if (code === LOCATION_SERVICES_DISABLED_CODE) {
+      return rawMessage || LOCATION_SERVICES_DISABLED_MESSAGE;
+    }
+
+    if (messageLower.includes("location") && messageLower.includes("service")) {
+      return rawMessage || LOCATION_SERVICES_DISABLED_MESSAGE;
+    }
+
+    if (code === "COLLECT_FAILED" || status === "COLLECT_FAILED") {
+      return rawMessage || CONTACTLESS_CANCELLED_MESSAGE;
+    }
+
+    if (
+      TAP_TO_PAY_CANCELLED_CODES.has(code) ||
+      TAP_TO_PAY_CANCELLED_CODES.has(status)
+    ) {
+      return rawMessage || TAP_TO_PAY_CANCELLED_MESSAGE;
+    }
+
+    return rawMessage || fallback;
+  };
 
   const {
     cart,
@@ -76,7 +173,11 @@ const handleSafeRefresh = () => {
     if (closeOrderResult) closeOrderResult();
     if (setCashPopupState) setCashPopupState("idle");
     if (setCardStatus) setCardStatus("idle");
+    setCardErrorMessage("");
+    setCardErrorCode("");
     activeCardSession.current = null;
+    pendingTapSession.current = null;
+    setTapSuccess(null);
 
     if (!config?.cashOnly) {
       setPaymentMethod("card");
@@ -100,7 +201,10 @@ const handleSafeRefresh = () => {
   };
   const handleSwitchToCash = async () => {
     activeCardSession.current = null;
+    pendingTapSession.current = null;
     setCardStatus("idle");
+    setCardErrorMessage("");
+    setCardErrorCode("");
     cancelPayment().catch((err) => console.error("Cancel failed", err));
     setPaymentMethod("cash");
     await placeOrder("cash");
@@ -133,29 +237,91 @@ const handleSafeRefresh = () => {
       handleCashConfirm();
       return;
     }
+    setCardErrorMessage("");
+    setCardErrorCode("");
     const mySessionId = `session-${Date.now()}`;
     activeCardSession.current = mySessionId;
+    pendingTapSession.current = mySessionId;
     setCardStatus("processing");
+
     try {
-      const res = await placeOrder("card");
+      const orderId = `order-${Date.now()}`;
+      const amountMinor = toMinor(cartTotal);
+
+      const bridgeRes = await startTapToPay({
+        amountMinor,
+        currency: "gbp",
+        orderId,
+      });
+
       if (activeCardSession.current !== mySessionId) return;
-      if (res) setCardStatus("idle");
-      else setCardStatus("failed");
+
+      const status = String(bridgeRes?.data?.status || "");
+      const paymentIntentId = bridgeRes?.data?.paymentIntentId;
+      const isSuccess =
+        bridgeRes?.ok && TAP_TO_PAY_SUCCESS_STATUSES.has(String(status));
+
+      if (!isSuccess) {
+        if (!status || TAP_TO_PAY_PENDING_STATUSES.has(String(status))) {
+          return;
+        }
+        if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
+          pendingTapSession.current = null;
+          setCardErrorCode(getTapToPayErrorCode(bridgeRes));
+          setCardErrorMessage(
+            getTapToPayErrorMessage(
+              bridgeRes,
+              "Tap-to-pay failed. Please try again."
+            )
+          );
+          setCardStatus("failed");
+          return;
+        }
+
+        setCardErrorCode(getTapToPayErrorCode(bridgeRes));
+        setCardErrorMessage(
+          getTapToPayErrorMessage(
+            bridgeRes,
+            "Tap-to-pay failed. Please try again."
+          )
+        );
+        setCardStatus("failed");
+        return;
+      }
+
+      // ✅ Flutter tap-to-pay succeeded; submit paid order without terminal flow
+      pendingTapSession.current = null;
+      setTapSuccess({
+        paymentIntentId,
+        amountMinor,
+        currency: "gbp",
+      });
+      setCardStatus("idle");
+      await placeOrder("card", {
+        skipTerminal: true,
+        chargeId: paymentIntentId,
+      });
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
-      console.error("card placeOrder error", e);
+      setCardErrorCode(getTapToPayErrorCode(e));
+      setCardErrorMessage(
+        getTapToPayErrorMessage(e, "Tap-to-pay error. Please try again.")
+      );
       setCardStatus("failed");
     }
   };
 
   const handleCardCancel = async () => {
     activeCardSession.current = null;
+    pendingTapSession.current = null;
     try {
       await cancelPayment();
     } catch (e) {
       console.error(e);
     }
     setCardStatus("idle");
+    setCardErrorMessage("");
+    setCardErrorCode("");
   };
 
   const handleCardTryAgain = async () => {
@@ -163,19 +329,168 @@ const handleSafeRefresh = () => {
       setCardStatus("idle");
       return;
     }
-    const mySessionId = `retry-${Date.now()}`;
+    setCardErrorMessage("");
+    setCardErrorCode("");
+    const mySessionId = `session-${Date.now()}`;
     activeCardSession.current = mySessionId;
+    pendingTapSession.current = mySessionId;
+
     setCardStatus("processing");
+
     try {
-      const res = await placeOrder("card");
+      const orderId = `order-${Date.now()}`;
+      const amountMinor = toMinor(cartTotal);
+
+      const bridgeRes = await startTapToPay({
+        amountMinor,
+        currency: "gbp",
+        orderId,
+      });
+
       if (activeCardSession.current !== mySessionId) return;
+
+      const status = String(bridgeRes?.data?.status || "");
+      const paymentIntentId = bridgeRes?.data?.paymentIntentId;
+      const isSuccess =
+        bridgeRes?.ok && TAP_TO_PAY_SUCCESS_STATUSES.has(String(status));
+
+      if (!isSuccess) {
+        if (!status || TAP_TO_PAY_PENDING_STATUSES.has(String(status))) {
+          return;
+        }
+        if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
+          pendingTapSession.current = null;
+          setCardErrorCode(getTapToPayErrorCode(bridgeRes));
+          setCardErrorMessage(
+            getTapToPayErrorMessage(
+              bridgeRes,
+              "Tap-to-pay failed. Please try again."
+            )
+          );
+          setCardStatus("failed");
+          return;
+        }
+
+        console.error("Tap-to-Pay failed:", bridgeRes);
+        setCardErrorCode(getTapToPayErrorCode(bridgeRes));
+        setCardErrorMessage(
+          getTapToPayErrorMessage(
+            bridgeRes,
+            "Tap-to-pay failed. Please try again."
+          )
+        );
+        setCardStatus("failed");
+        return;
+      }
+
+      // ✅ Flutter tap-to-pay succeeded; submit paid order without terminal flow
+      pendingTapSession.current = null;
+      setTapSuccess({
+        paymentIntentId,
+        amountMinor,
+        currency: "gbp",
+      });
+      const res = await placeOrder("card", {
+        skipTerminal: true,
+        chargeId: paymentIntentId,
+      });
+
+      if (activeCardSession.current !== mySessionId) return;
+
       if (res) setCardStatus("idle");
       else setCardStatus("failed");
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
+      console.error("Tap-to-Pay error:", e);
+      setCardErrorCode(getTapToPayErrorCode(e));
+      setCardErrorMessage(
+        getTapToPayErrorMessage(e, "Tap-to-pay error. Please try again.")
+      );
       setCardStatus("failed");
     }
   };
+
+  useEffect(() => {
+    const handler = async (json: any) => {
+      let data: any;
+      try {
+        data = typeof json === "string" ? JSON.parse(json) : json;
+      } catch {
+        return;
+      }
+
+      console.log("native status", data);
+      setNativeStatusLog(JSON.stringify(data, null, 2));
+
+      const status = String(data?.status || data?.data?.status || "");
+      const ok = data?.ok ?? data?.data?.ok;
+      const paymentIntentId =
+        data?.paymentIntentId || data?.data?.paymentIntentId;
+      const errorCode = getTapToPayErrorCode(data);
+      const message = getTapToPayErrorMessage(
+        data,
+        "Tap-to-pay failed. Please try again."
+      );
+      const amountMinor = data?.amount ?? data?.data?.amount;
+      const currency = data?.currency || data?.data?.currency;
+
+      const sessionId = pendingTapSession.current;
+      if (!sessionId || activeCardSession.current !== sessionId) return;
+
+      if (ok === false) {
+        pendingTapSession.current = null;
+        setTapSuccess(null);
+        setCardErrorCode(errorCode || getTapToPayStatus(data));
+        setCardErrorMessage(message);
+        setCardStatus("failed");
+        return;
+      }
+
+      if (TAP_TO_PAY_SUCCESS_STATUSES.has(status)) {
+        pendingTapSession.current = null;
+        setTapSuccess({
+          paymentIntentId,
+          amountMinor,
+          currency,
+        });
+        setCardStatus("idle");
+        try {
+          await placeOrder("card", {
+            skipTerminal: true,
+            chargeId: paymentIntentId,
+          });
+        } catch (e) {
+          setCardErrorCode(getTapToPayErrorCode(e));
+          setCardErrorMessage(
+            getTapToPayErrorMessage(e, "Tap-to-pay error. Please try again.")
+          );
+          setCardStatus("failed");
+        }
+        return;
+      }
+
+      if (TAP_TO_PAY_FAILURE_STATUSES.has(status)) {
+        pendingTapSession.current = null;
+        setTapSuccess(null);
+        setCardErrorCode(errorCode);
+        setCardErrorMessage(message);
+        setCardStatus("failed");
+        return;
+      }
+
+      if (TAP_TO_PAY_PENDING_STATUSES.has(status)) {
+        setCardStatus("processing");
+      }
+    };
+
+    (window as any).onNativePaymentStatus = handler;
+
+    return () => {
+      if ((window as any).onNativePaymentStatus === handler) {
+        delete (window as any).onNativePaymentStatus;
+      }
+    };
+  }, [placeOrder, setCardStatus, setCardErrorMessage]);
 
   // ✅ HANDLER: Click "Edit" (Quantity Only)
   const handleEditQtyClick = (item: any) => {
@@ -225,6 +540,11 @@ const handleSafeRefresh = () => {
 
   return (
     <div className="w-full md:w-full lg:min-w-[380px] h-full bg-gray-100 border-l border-gray-300 flex flex-col relative overflow-hidden">
+      {nativeStatusLog ? (
+        <pre className="absolute bottom-2 left-2 z-50 max-w-[90%] max-h-[40%] overflow-auto bg-black/80 text-green-200 text-xs p-2 rounded">
+          {nativeStatusLog}
+        </pre>
+      ) : null}
       {showCheckout && <CheckoutFlow onClose={() => setShowCheckout(false)} />}
       <CashPaymentPopup />
 
@@ -294,7 +614,11 @@ const handleSafeRefresh = () => {
                   }`}
                 >
                   <span className="text-4xl">
-                    {cardStatus === "failed" ? "❌" : "💳"}
+                    {cardStatus === "failed"
+                      ? cardErrorCode === LOCATION_SERVICES_DISABLED_CODE
+                        ? "📍"
+                        : "❌"
+                      : "💳"}
                   </span>
                 </div>
 
@@ -329,9 +653,31 @@ const handleSafeRefresh = () => {
 
               <h1 className="text-2xl font-black text-gray-800 mb-2">
                 {cardStatus === "failed"
-                  ? "Payment Failed"
+                  ? cardErrorCode === LOCATION_SERVICES_DISABLED_CODE
+                    ? "Location Services Required"
+                    : TAP_TO_PAY_CANCELLED_CODES.has(cardErrorCode)
+                    ? "Payment Cancelled"
+                    : "Payment Failed"
                   : "Payment Processing"}
               </h1>
+              {cardStatus === "failed" && cardErrorMessage && (
+                <p
+                  className={`text-sm mb-4 ${
+                    cardErrorCode === LOCATION_SERVICES_DISABLED_CODE
+                      ? "text-amber-700"
+                      : "text-red-600"
+                  }`}
+                >
+                  {cardErrorMessage}
+                </p>
+              )}
+              {cardStatus === "failed" &&
+                cardErrorCode === LOCATION_SERVICES_DISABLED_CODE && (
+                  <p className="text-xs text-gray-500 mb-4">
+                    Please enable location services to use the terminal, then
+                    tap Try Again.
+                  </p>
+              )}
               {cardStatus === "processing" && (
                 <p className="text-gray-500 mb-6">
                   Please tap, insert, or swipe your card on the terminal.
@@ -360,7 +706,9 @@ const handleSafeRefresh = () => {
                       onClick={handleCardTryAgain}
                       className="w-full bg-[#c2410c] text-white py-3 rounded-full font-bold shadow-lg shadow-orange-200"
                     >
-                      Try Again
+                      {cardErrorCode === LOCATION_SERVICES_DISABLED_CODE
+                        ? "I've Enabled Location"
+                        : "Try Again"}
                     </button>
 
                     <button
@@ -400,6 +748,39 @@ const handleSafeRefresh = () => {
           </div>
         )}
 
+      {/* 2b. Tap-to-pay success (before order result arrives) */}
+      {tapSuccess && !orderResult && cardStatus !== "processing" && (
+        <div className="absolute inset-0 z-40 bg-black/70 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <div className="w-20 h-20 mx-auto rounded-full bg-green-100 flex items-center justify-center text-green-600 text-4xl mb-5">
+              ✅
+            </div>
+            <h1 className="text-2xl font-black text-gray-800 mb-2">
+              Payment Successful
+            </h1>
+            <p className="text-gray-500 mb-6">
+              Your payment is approved. Finishing your order...
+            </p>
+            <div className="bg-gray-100 rounded-xl p-4 mb-6">
+              <div className="text-4xl font-black text-[#16a34a]">
+                £{cartTotal.toFixed(2)}
+              </div>
+              {tapSuccess.paymentIntentId ? (
+                <div className="text-xs text-gray-500 mt-2 break-all">
+                  {tapSuccess.paymentIntentId}
+                </div>
+              ) : null}
+            </div>
+            <button
+              onClick={handleDoneClick}
+              className="w-full bg-[#c2410c] text-white py-3 rounded-full font-bold text-lg shadow-lg"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 3. Header */}
       {/* <div className="bg-[#c2410c] text-white p-4 flex justify-between items-center shadow-md shrink-0">
         <h2 className="text-xl font-bold">Your Order</h2>
@@ -428,18 +809,18 @@ const handleSafeRefresh = () => {
               <div
                 key={item.cartId}
                 className={`bg-white rounded-lg shadow-sm border relative transition-all duration-300 ${
-                  isAnimating 
-                    ? 'border-orange-500 border-2 shadow-lg shadow-orange-200' 
-                    : 'border-gray-200'
+                  isAnimating
+                    ? "border-orange-500 border-2 shadow-lg shadow-orange-200"
+                    : "border-gray-200"
                 }`}
               >
                 {/* Shimmer Animation Layer - z-10 */}
                 {isAnimating && (
-                   <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none z-10">
-                      <div className="shimmer-effect" />
-                   </div>
+                  <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none z-10">
+                    <div className="shimmer-effect" />
+                  </div>
                 )}
-                
+
                 {/* Main row - z-0 (base) */}
                 <div className="p-3 flex gap-3">
                   {/* Left content */}
@@ -539,11 +920,10 @@ const handleSafeRefresh = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Note Modal - z-50 for global overlay, highest priority */}
                 {editingItem && isNoteOpen && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                       {/* Header */}
                       <div className="bg-gray-50 p-4 border-b border-gray-100 flex justify-between items-center">
@@ -701,18 +1081,21 @@ const handleSafeRefresh = () => {
               Continue Shopping
             </button>
           ) : (
-            (APP_MODE === 'pos') && (
+            APP_MODE === "pos" && (
               <button
                 className={`flex-1 h-[50px] backdrop-blur-sm text-white rounded-xl font-bold transition-all shadow-lg border border-white/20 active:scale-95 flex items-center justify-center
-                  ${refreshCount > 0 ? "bg-red-500/40" : "bg-white/20 hover:bg-white/30"} 
+                  ${
+                    refreshCount > 0
+                      ? "bg-red-500/40"
+                      : "bg-white/20 hover:bg-white/30"
+                  } 
                 `}
                 onClick={handleSafeRefresh}
               >
                 {/* Logic Change Here: Only show count if it is greater than 0 AND less than 3 */}
-                {refreshCount > 0 && refreshCount < 3 
-                  ? `Tap ${3 - refreshCount}` 
-                  : "Refresh"
-                }
+                {refreshCount > 0 && refreshCount < 3
+                  ? `Tap ${3 - refreshCount}`
+                  : "Refresh"}
               </button>
             )
           )}

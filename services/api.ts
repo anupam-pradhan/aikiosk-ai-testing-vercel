@@ -29,7 +29,7 @@ export const sendOrder = async (
   try {
     const payload = {
       name: order.name || "",
-      payment: "cash",
+      payment: order.payment || "cash",
       phone: order.phone || "",
       service: "collection",
       time: order.time || "",

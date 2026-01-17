@@ -9,6 +9,7 @@ import SendMenuModal from "./SendMenuModal";
 import { APP_MODE } from "../config/mode";
 import ItemFlowOverlay from "./ItemFlowOverlay";
 import OrdersModal from "./Orders/OrdersModal";
+import FlutterBridgeTest from "./Flutter/FlutterBridgeTest";
 
 const SHOW_VOICE_DEBUG = false;
 
@@ -708,6 +709,8 @@ const KioskLayout: React.FC = () => {
           {/* Debug content */}
         </div>
       )}
+
+      <FlutterBridgeTest />
     </div>
   );
 };

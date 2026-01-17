@@ -245,7 +245,8 @@ export default function CheckoutFlow({ onClose }: { onClose: () => void }) {
 
   async function onPlace() {
     setErr("");
-    if (!canPlace) return;
+    if (!canPlace || isOrdering) return;
+
     const res = await placeOrder(paymentMethod);
     if (!res) setErr("Order failed");
   }

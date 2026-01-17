@@ -93,7 +93,10 @@ interface OrderContextType {
 
   // cash → sends order directly
   // card → terminal payment flow → then sends order
-  placeOrder: (paymentOverride?: PaymentMethod) => Promise<OrderResult | null>;
+  placeOrder: (
+    paymentOverride?: PaymentMethod,
+    options?: { skipTerminal?: boolean; chargeId?: string }
+  ) => Promise<OrderResult | null>;
   cardStatus: CardStatus;
   setCardStatus: (s: CardStatus) => void;
   cancelPayment: () => Promise<string>;
@@ -183,7 +186,8 @@ export const PAYMENT_MODE =
 export const PAYMENT_BASE_URL =
   PAYMENT_MODE === "live"
     ? "https://stripe-payment-mb2j.onrender.com"
-    : "http://localhost:4242";
+    : (import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
+      "http://192.168.1.161:4242";
 
 // Fallback version URL if vendor is missing
 const FALLBACK_VERSION_URL =
@@ -666,7 +670,10 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
   // ---------------- Place Order (cash/card) ----------------
 
   const placeOrder = useCallback(
-    async (paymentOverride?: PaymentMethod): Promise<OrderResult | null> => {
+    async (
+      paymentOverride?: PaymentMethod,
+      options?: { skipTerminal?: boolean; chargeId?: string }
+    ): Promise<OrderResult | null> => {
       if (cart.length === 0) return null;
 
       const method: PaymentMethod = paymentOverride ?? paymentMethod ?? "cash";
@@ -677,6 +684,25 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
       try {
         const order = buildOrderFromCart();
+        if (options?.chargeId) {
+          order.chargeId = options.chargeId;
+        }
+
+        // ✅ Tap-to-Pay already handled via Flutter bridge; just send paid order
+        if (effectiveMethod === "card" && options?.skipTerminal) {
+          const orderForTap = {
+            ...order,
+            payment: "terminal",
+          } as any;
+
+          const result = await (apiSendOrder as any)(orderForTap, baseUrl);
+
+          setOrderResult(result);
+          clearCart();
+          setEditingOrderId(null);
+
+          return result;
+        }
 
         // ✅ MOBILEKIOSK + CARD: send order, payment=terminal, then redirect to checkhosturl
         if (effectiveMethod === "card" && IS_MOBILEKIOSK) {
