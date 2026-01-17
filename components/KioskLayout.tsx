@@ -95,7 +95,7 @@ const KioskLayout: React.FC = () => {
     const setAppHeight = () => {
       document.documentElement.style.setProperty(
         "--app-height",
-        `${window.innerHeight}px`
+        `${window.innerHeight}px`,
       );
     };
     setAppHeight();
@@ -165,7 +165,7 @@ const KioskLayout: React.FC = () => {
     clearInactivityTimer();
     inactivityTimerRef.current = setTimeout(
       () => resetToWelcome(),
-      INACTIVITY_MS
+      INACTIVITY_MS,
     );
   };
 
@@ -710,7 +710,7 @@ const KioskLayout: React.FC = () => {
         </div>
       )}
 
-      <FlutterBridgeTest />
+      {/* <FlutterBridgeTest /> */}
     </div>
   );
 };

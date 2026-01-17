@@ -17,7 +17,7 @@ export async function startTapToPay(payload: {
 }) {
   const terminalBaseUrl =
     (import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
-    "http://192.168.1.161:4242";
+    "https://server-tan-phi-77.vercel.app/terminal/connection_token";
   const terminalLocationId =
     payload.locationId ||
     (import.meta as any).env?.VITE_TERMINAL_LOCATION_ID ||
@@ -56,7 +56,10 @@ export async function startTapToPay(payload: {
   };
 
   if (window.flutter_inappwebview?.callHandler) {
-    return window.flutter_inappwebview.callHandler("kioskBridge", bridgePayload);
+    return window.flutter_inappwebview.callHandler(
+      "kioskBridge",
+      bridgePayload,
+    );
   }
 
   if (window.PayBridge?.postMessage) {
