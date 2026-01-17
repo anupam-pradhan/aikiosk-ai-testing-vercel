@@ -18,6 +18,7 @@ export async function startTapToPay(payload: {
   const terminalBaseUrl =
     (import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
     "http://192.168.1.161:4242";
+  const normalizedBaseUrl = terminalBaseUrl.replace(/\/+$/, "");
   const terminalLocationId =
     payload.locationId ||
     (import.meta as any).env?.VITE_TERMINAL_LOCATION_ID ||
@@ -27,7 +28,7 @@ export async function startTapToPay(payload: {
     throw new Error("TERMINAL_LOCATION_ID_MISSING");
   }
 
-  const intentRes = await fetch(`${terminalBaseUrl}/terminal/create_intent`, {
+  const intentRes = await fetch(`${normalizedBaseUrl}/terminal/create_intent`, {
     method: "POST",
     headers: { "Content-Type": "application/json; charset=UTF-8" },
     body: JSON.stringify({
@@ -51,7 +52,7 @@ export async function startTapToPay(payload: {
     orderId: payload.orderId,
     paymentIntentId: intent.paymentIntentId,
     clientSecret: intent.clientSecret,
-    terminalBaseUrl,
+    terminalBaseUrl: normalizedBaseUrl,
     locationId: terminalLocationId,
   };
 
