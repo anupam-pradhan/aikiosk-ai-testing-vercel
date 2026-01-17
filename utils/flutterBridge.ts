@@ -17,7 +17,7 @@ export async function startTapToPay(payload: {
 }) {
   const terminalBaseUrl =
     (import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
-    "https://server-tan-phi-77.vercel.app/terminal/connection_token";
+    "https://server-tan-phi-77.vercel.app/";
   const terminalLocationId =
     payload.locationId ||
     (import.meta as any).env?.VITE_TERMINAL_LOCATION_ID ||
