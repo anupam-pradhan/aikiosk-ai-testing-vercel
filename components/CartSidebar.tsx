@@ -49,9 +49,6 @@ const TAP_TO_PAY_CANCELLED_CODES = new Set([
 ]);
 const TAP_TO_PAY_CANCELLED_MESSAGE = "Payment cancelled on terminal.";
 const CONTACTLESS_CANCELLED_MESSAGE = "Contactless payment was cancelled.";
-const PAYMENT_DEBUG_ENABLED =
-  String((import.meta as any).env?.VITE_PAYMENT_DEBUG || "").toLowerCase() ===
-  "true";
 
 const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
   const [showCheckout, setShowCheckout] = useState(false);
@@ -543,11 +540,6 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
 
   return (
       <div className="w-full md:w-full lg:min-w-[380px] h-full bg-gray-100 border-l border-gray-300 flex flex-col relative overflow-hidden">
-      {PAYMENT_DEBUG_ENABLED && nativeStatusLog ? (
-        <pre className="absolute bottom-2 left-2 z-50 max-w-[90%] max-h-[40%] overflow-auto bg-black/80 text-green-200 text-xs p-2 rounded">
-          {nativeStatusLog}
-        </pre>
-      ) : null}
       {showCheckout && <CheckoutFlow onClose={() => setShowCheckout(false)} />}
       <CashPaymentPopup />
 
