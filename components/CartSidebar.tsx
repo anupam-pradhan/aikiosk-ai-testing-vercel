@@ -96,6 +96,14 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     amountMinor?: number;
     currency?: string;
   } | null>(null);
+  const shouldFallbackAfterTapError = (payload: any, statusOverride?: string) => {
+    const code = getTapToPayErrorCode(payload);
+    const status = statusOverride ?? getTapToPayStatus(payload);
+    return (
+      !TAP_TO_PAY_CANCELLED_CODES.has(code) &&
+      !TAP_TO_PAY_CANCELLED_CODES.has(status)
+    );
+  };
   const getTapToPayStatus = (payload: any) =>
     String(payload?.data?.status || payload?.status || "");
   const getTapToPayErrorCode = (payload: any) => {
@@ -226,6 +234,31 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     resetSystem();
   };
 
+  const runLegacyCardFlow = async () => {
+    activeCardSession.current = null;
+    pendingTapSession.current = null;
+    tapOrderSubmitted.current = null;
+    setTapSuccess(null);
+    setCardErrorMessage("");
+    setCardErrorCode("");
+    setCardStatus("processing");
+
+    try {
+      const res = await placeOrder("card");
+      if (res) {
+        setCardStatus("idle");
+        return true;
+      }
+      setCardErrorMessage("Card payment failed. Please try again.");
+      setCardStatus("failed");
+      return false;
+    } catch (e) {
+      setCardErrorMessage("Card payment failed. Please try again.");
+      setCardStatus("failed");
+      return false;
+    }
+  };
+
   const handleFinish = async () => {
     if (cart.length === 0) return;
     if (isOrdering) return;
@@ -270,6 +303,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
         }
         if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
           pendingTapSession.current = null;
+          if (shouldFallbackAfterTapError(bridgeRes, status)) {
+            await runLegacyCardFlow();
+            return;
+          }
           setCardErrorCode(getTapToPayErrorCode(bridgeRes));
           setCardErrorMessage(
             getTapToPayErrorMessage(
@@ -281,6 +318,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
           return;
         }
 
+        if (shouldFallbackAfterTapError(bridgeRes, status)) {
+          pendingTapSession.current = null;
+          await runLegacyCardFlow();
+          return;
+        }
         setCardErrorCode(getTapToPayErrorCode(bridgeRes));
         setCardErrorMessage(
           getTapToPayErrorMessage(
@@ -308,6 +350,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       });
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
+      if (shouldFallbackAfterTapError(e)) {
+        await runLegacyCardFlow();
+        return;
+      }
       setCardErrorCode(getTapToPayErrorCode(e));
       setCardErrorMessage(
         getTapToPayErrorMessage(e, "Tap-to-pay error. Please try again.")
@@ -366,6 +412,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
         }
         if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
           pendingTapSession.current = null;
+          if (shouldFallbackAfterTapError(bridgeRes, status)) {
+            await runLegacyCardFlow();
+            return;
+          }
           setCardErrorCode(getTapToPayErrorCode(bridgeRes));
           setCardErrorMessage(
             getTapToPayErrorMessage(
@@ -377,6 +427,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
           return;
         }
 
+        if (shouldFallbackAfterTapError(bridgeRes, status)) {
+          pendingTapSession.current = null;
+          await runLegacyCardFlow();
+          return;
+        }
         console.error("Tap-to-Pay failed:", bridgeRes);
         setCardErrorCode(getTapToPayErrorCode(bridgeRes));
         setCardErrorMessage(
@@ -410,6 +465,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
       console.error("Tap-to-Pay error:", e);
+      if (shouldFallbackAfterTapError(e)) {
+        await runLegacyCardFlow();
+        return;
+      }
       setCardErrorCode(getTapToPayErrorCode(e));
       setCardErrorMessage(
         getTapToPayErrorMessage(e, "Tap-to-pay error. Please try again.")
@@ -482,6 +541,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       if (TAP_TO_PAY_FAILURE_STATUSES.has(status)) {
         pendingTapSession.current = null;
         setTapSuccess(null);
+        if (shouldFallbackAfterTapError(data, status)) {
+          await runLegacyCardFlow();
+          return;
+        }
         setCardErrorCode(errorCode);
         setCardErrorMessage(message);
         setCardStatus("failed");
