@@ -696,12 +696,24 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
           } as any;
 
           const result = await (apiSendOrder as any)(orderForTap, baseUrl);
+          const normalizedResult =
+            result && !result.order_number
+              ? {
+                  ...result,
+                  order_number:
+                    result.orderNo || result.order_id || result.orderId,
+                }
+              : result;
 
-          setOrderResult(result);
+          setOrderResult(normalizedResult);
+          if (normalizedResult?.order_number) {
+            setCompletedOrderNumber(normalizedResult.order_number);
+          }
+          setCashPopupState("completed");
           clearCart();
           setEditingOrderId(null);
 
-          return result;
+          return normalizedResult;
         }
 
         // ✅ MOBILEKIOSK + CARD: send order, payment=terminal, then redirect to checkhosturl
@@ -712,19 +724,27 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
           } as any;
 
           const result = await (apiSendOrder as any)(orderForMobile, baseUrl);
+          const normalizedResult =
+            result && !result.order_number
+              ? {
+                  ...result,
+                  order_number:
+                    result.orderNo || result.order_id || result.orderId,
+                }
+              : result;
 
           // optional: keep a result in state (helps debugging)
-          setOrderResult(result);
+          setOrderResult(normalizedResult);
 
           // ✅ Redirect user to payment URL
-          if (result?.checkhosturl) {
-            window.location.href = result.checkhosturl;
+          if (normalizedResult?.checkhosturl) {
+            window.location.href = normalizedResult.checkhosturl;
           }
 
           // you can decide when to clear cart (often AFTER payment callback)
           clearCart();
 
-          return result;
+          return normalizedResult;
         }
 
         // ✅ NORMAL KIOSK (largekiosk/kiosk) + CARD: existing terminal flow (works)

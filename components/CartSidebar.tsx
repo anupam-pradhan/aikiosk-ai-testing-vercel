@@ -84,6 +84,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
   );
   const activeCardSession = useRef<string | null>(null);
   const pendingTapSession = useRef<string | null>(null);
+  const tapOrderSubmitted = useRef<string | null>(null);
 
   const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [tempNote, setTempNote] = useState("");
@@ -177,6 +178,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     setCardErrorCode("");
     activeCardSession.current = null;
     pendingTapSession.current = null;
+    tapOrderSubmitted.current = null;
     setTapSuccess(null);
 
     if (!config?.cashOnly) {
@@ -242,6 +244,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     const mySessionId = `session-${Date.now()}`;
     activeCardSession.current = mySessionId;
     pendingTapSession.current = mySessionId;
+    tapOrderSubmitted.current = null;
     setCardStatus("processing");
 
     try {
@@ -291,6 +294,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
 
       // ✅ Flutter tap-to-pay succeeded; submit paid order without terminal flow
       pendingTapSession.current = null;
+      if (tapOrderSubmitted.current === mySessionId) return;
+      tapOrderSubmitted.current = mySessionId;
       setTapSuccess({
         paymentIntentId,
         amountMinor,
@@ -334,6 +339,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     const mySessionId = `session-${Date.now()}`;
     activeCardSession.current = mySessionId;
     pendingTapSession.current = mySessionId;
+    tapOrderSubmitted.current = null;
 
     setCardStatus("processing");
 
@@ -385,6 +391,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
 
       // ✅ Flutter tap-to-pay succeeded; submit paid order without terminal flow
       pendingTapSession.current = null;
+      if (tapOrderSubmitted.current === mySessionId) return;
+      tapOrderSubmitted.current = mySessionId;
       setTapSuccess({
         paymentIntentId,
         amountMinor,
@@ -448,6 +456,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
 
       if (TAP_TO_PAY_SUCCESS_STATUSES.has(status)) {
         pendingTapSession.current = null;
+        if (tapOrderSubmitted.current === sessionId) return;
+        tapOrderSubmitted.current = sessionId;
         setTapSuccess({
           paymentIntentId,
           amountMinor,
@@ -544,7 +554,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       <CashPaymentPopup />
 
       {/* 1. Order Success Modal */}
-      {orderResult && paymentMethod !== "cash" && (
+      {orderResult && paymentMethod !== "cash" && cashPopupState === "idle" && (
         <div className="absolute inset-0 z-30 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm text-center flex flex-col items-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
