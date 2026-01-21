@@ -95,7 +95,7 @@ interface OrderContextType {
   // card → terminal payment flow → then sends order
   placeOrder: (
     paymentOverride?: PaymentMethod,
-    options?: { skipTerminal?: boolean; chargeId?: string }
+    options?: { skipTerminal?: boolean; chargeId?: string },
   ) => Promise<OrderResult | null>;
   cardStatus: CardStatus;
   setCardStatus: (s: CardStatus) => void;
@@ -107,7 +107,7 @@ interface OrderContextType {
     item: Itemlist,
     variantId: string | number,
     modifiers?: SelectedModifier[],
-    quantity?: number
+    quantity?: number,
   ) => void;
   removeFromCart: (cartId: string) => void;
   clearCart: () => void;
@@ -115,17 +115,17 @@ interface OrderContextType {
   updateCartItemNote: (cartId: string, note: string) => void;
   updateCartItemModifiers: (
     cartId: string,
-    modifiers: SelectedModifier[]
+    modifiers: SelectedModifier[],
   ) => void;
   updateCartItemVariant: (
     cartId: string,
     variantId: string | number,
     variantName: string,
-    newBasePrice: number
+    newBasePrice: number,
   ) => void;
 
   findItemByName: (
-    name: string
+    name: string,
   ) => { item: Itemlist; category: Categorylist } | null;
 
   // Wizard State
@@ -142,14 +142,14 @@ interface OrderContextType {
   setService: (service: OrderService) => void;
   setCheckoutField: <K extends keyof CheckoutDetails>(
     k: K,
-    v: CheckoutDetails[K]
+    v: CheckoutDetails[K],
   ) => void;
   resetCheckout: () => void;
   // Wizard Actions
   highlightItem: (item: Itemlist) => void;
   startItemFlow: (
     item: Itemlist,
-    initialModifiers?: SelectedModifier[]
+    initialModifiers?: SelectedModifier[],
   ) => void;
   selectVariant: (variant: Variantlist) => void;
   toggleModifier: (mod: ListElement, group: Modifierlist) => void;
@@ -185,9 +185,9 @@ export const PAYMENT_MODE =
 // ✅ FIXED mapping
 export const PAYMENT_BASE_URL =
   PAYMENT_MODE === "live"
-    ? "https://stripe-payment-mb2j.onrender.com"
-    : (import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
-      "http://192.168.1.161:4242";
+    ? "https://server-tan-phi-77.vercel.app/"
+    : ((import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
+      "http://192.168.1.161:4242");
 
 // Fallback version URL if vendor is missing
 const FALLBACK_VERSION_URL =
@@ -208,7 +208,7 @@ export const toPenceString = (amount: number) =>
 export const calcDeductFeesPence = (
   total: number,
   stripeFeesPents?: string,
-  stripeFeesPercent?: string
+  stripeFeesPercent?: string,
 ) => {
   const fp = parseInt(stripeFeesPents || "0", 10);
   const pct = parseFloat(stripeFeesPercent || "0");
@@ -273,7 +273,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
   const setCheckoutField = <K extends keyof CheckoutDetails>(
     k: K,
-    v: CheckoutDetails[K]
+    v: CheckoutDetails[K],
   ) => setCheckout((p) => ({ ...p, [k]: v }));
 
   const resetCheckout = () =>
@@ -293,7 +293,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
   const [activeItem, setActiveItem] = useState<Itemlist | null>(null);
   const [activeVariant, setActiveVariant] = useState<Variantlist | null>(null);
   const [activeModifiers, setActiveModifiers] = useState<SelectedModifier[]>(
-    []
+    [],
   );
   const [activeNote, setActiveNote] = useState("");
   const [highlightedItemId, setHighlightedItemId] = useState<
@@ -302,7 +302,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
   // Edit Mode State
   const [editingOrderId, setEditingOrderId] = useState<string | number | null>(
-    null
+    null,
   );
 
   // Cart Signal
@@ -363,7 +363,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
   const cartTotal = useMemo(
     () => cart.reduce((sum, item) => sum + item.total, 0),
-    [cart]
+    [cart],
   );
 
   // ---------------- Wizard reset on category change ----------------
@@ -383,7 +383,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       const cat = categories.find((c) => c.id == categoryId) ?? null;
       setSelectedCategory(cat); // uses your reset + _setSelectedCategory
     },
-    [categories]
+    [categories],
   );
 
   // Ensure selected category stays in sync with freshly loaded menus
@@ -409,7 +409,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
     variantId: string | number,
     modifiers: SelectedModifier[] = [],
     quantity: number = 1,
-    note: string = ""
+    note: string = "",
   ) => {
     const variant =
       item.variantlist.find((v) => v.id == variantId) || item.variantlist[0];
@@ -419,7 +419,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
     const modifiersTotal = modifiers.reduce(
       (sum, m) => sum + m.price * m.modqty,
-      0
+      0,
     );
 
     const singleItemTotal = variant.price + modifiersTotal;
@@ -471,20 +471,20 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
             total: singleItemTotal * newQty,
           };
         })
-        .filter((item) => item.qty > 0)
+        .filter((item) => item.qty > 0),
     );
   };
   const updateCartItemNote = (cartId: string, note: string) => {
     setCart((prev) =>
       prev.map((item) =>
-        item.cartId === cartId ? { ...item, note: note } : item
-      )
+        item.cartId === cartId ? { ...item, note: note } : item,
+      ),
     );
   };
 
   const updateCartItemModifiers = (
     cartId: string,
-    modifiers: SelectedModifier[]
+    modifiers: SelectedModifier[],
   ) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -492,7 +492,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
         const modifiersTotal = modifiers.reduce(
           (sum, m) => sum + m.price * m.modqty,
-          0
+          0,
         );
 
         return {
@@ -500,7 +500,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
           modifiers,
           total: (item.basePrice + modifiersTotal) * item.qty,
         };
-      })
+      }),
     );
   };
 
@@ -508,7 +508,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
     cartId: string,
     variantId: string | number,
     variantName: string,
-    newBasePrice: number
+    newBasePrice: number,
   ) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -530,7 +530,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
           price: newBasePrice, // Keep price/basePrice in sync
           total: singleItemTotal * item.qty,
         };
-      })
+      }),
     );
   };
 
@@ -565,7 +565,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
         genralNote: checkout.generalNote || "",
       } as any;
     },
-    [cart, cartTotal, checkout]
+    [cart, cartTotal, checkout],
   );
   // ---------------- Terminal payment flow (Dart-equivalent) ----------------
 
@@ -623,7 +623,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       const deductFees = calcDeductFeesPence(
         total,
         config?.stripeFeesPents,
-        config?.stripeFeesPercent
+        config?.stripeFeesPercent,
       );
 
       // ✅ Always prefer vendor
@@ -664,7 +664,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
         return raw as any;
       }
     },
-    [config, vendor]
+    [config, vendor],
   );
 
   // ---------------- Place Order (cash/card) ----------------
@@ -672,7 +672,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
   const placeOrder = useCallback(
     async (
       paymentOverride?: PaymentMethod,
-      options?: { skipTerminal?: boolean; chargeId?: string }
+      options?: { skipTerminal?: boolean; chargeId?: string },
     ): Promise<OrderResult | null> => {
       if (cart.length === 0) return null;
 
@@ -824,7 +824,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       setCashPopupState,
       setCompletedOrderNumber,
       editingOrderId, // Dependency
-    ]
+    ],
   );
 
   // ---------------- Load Order Into Cart (Edit Mode) ----------------
@@ -898,7 +898,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
     for (const cat of menu.categorylist) {
       const item = cat.itemlist.find((i) =>
-        i.name.toLowerCase().includes(lowerName)
+        i.name.toLowerCase().includes(lowerName),
       );
       if (item) return { item, category: cat };
     }
@@ -924,7 +924,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       // Auto-clear after 10 seconds if user doesn't respond
       setTimeout(() => {
         setHighlightedItemId((current) =>
-          current === item.id ? null : current
+          current === item.id ? null : current,
         );
       }, 10000);
     }, 100);
@@ -932,7 +932,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
   const startItemFlow = (
     item: Itemlist,
-    initialModifiers?: SelectedModifier[]
+    initialModifiers?: SelectedModifier[],
   ) => {
     // Clear any existing highlight
     setHighlightedItemId(null);
@@ -955,7 +955,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
       const modGroups =
         (variant as any).modifierlist || (variant as any).modifierList || [];
       const hasModifiers = modGroups.some(
-        (g: any) => g.list && g.list.length > 0
+        (g: any) => g.list && g.list.length > 0,
       );
 
       if (hasModifiers) {
@@ -977,7 +977,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
     const modGroups =
       (variant as any).modifierlist || (variant as any).modifierList || [];
     const hasModifiers = modGroups.some(
-      (g: any) => g.list && g.list.length > 0
+      (g: any) => g.list && g.list.length > 0,
     );
 
     if (hasModifiers) {
@@ -995,7 +995,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
   const toggleModifier = (
     mod: ListElement,
     group: Modifierlist,
-    forceRemove = false
+    forceRemove = false,
   ) => {
     setActiveModifiers((prev) => {
       const isMultiple = !!group.is_multiple;
@@ -1009,7 +1009,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
 
         // Otherwise increment
         return prev.map((m) =>
-          m.id === mod.id ? { ...m, modqty: m.modqty + 1 } : m
+          m.id === mod.id ? { ...m, modqty: m.modqty + 1 } : m,
         );
       }
 
@@ -1068,7 +1068,7 @@ export const OrderProvider: React.FC<{ children: ReactNode }> = ({
           }
           return m;
         })
-        .filter((m) => m.modqty > 0)
+        .filter((m) => m.modqty > 0),
     );
   };
 
