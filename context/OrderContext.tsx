@@ -185,7 +185,7 @@ export const PAYMENT_MODE =
 // ✅ FIXED mapping
 export const PAYMENT_BASE_URL =
   PAYMENT_MODE === "live"
-    ? "https://server-tan-phi-77.vercel.app/"
+    ? "https://server-tan-phi-77.vercel.app"
     : ((import.meta as any).env?.VITE_TERMINAL_BASE_URL ??
       "http://192.168.1.161:4242");
 
