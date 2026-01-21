@@ -308,6 +308,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
         if (!status || TAP_TO_PAY_PENDING_STATUSES.has(String(status))) {
           return;
         }
+        if (getTapToPayErrorCode(bridgeRes) === "NFC_UNSUPPORTED") {
+          pendingTapSession.current = null;
+          setIsTapToPayAvailable(false);
+          await runLegacyCardFlow();
+          return;
+        }
         if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
           pendingTapSession.current = null;
           if (shouldFallbackAfterTapError(bridgeRes, status)) {
@@ -357,6 +363,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       });
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
+      if (getTapToPayErrorCode(e) === "NFC_UNSUPPORTED") {
+        setIsTapToPayAvailable(false);
+        await runLegacyCardFlow();
+        return;
+      }
       if (shouldFallbackAfterTapError(e)) {
         await runLegacyCardFlow();
         return;
@@ -421,6 +432,12 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
         if (!status || TAP_TO_PAY_PENDING_STATUSES.has(String(status))) {
           return;
         }
+        if (getTapToPayErrorCode(bridgeRes) === "NFC_UNSUPPORTED") {
+          pendingTapSession.current = null;
+          setIsTapToPayAvailable(false);
+          await runLegacyCardFlow();
+          return;
+        }
         if (!bridgeRes?.ok || TAP_TO_PAY_FAILURE_STATUSES.has(String(status))) {
           pendingTapSession.current = null;
           if (shouldFallbackAfterTapError(bridgeRes, status)) {
@@ -476,6 +493,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
     } catch (e) {
       if (activeCardSession.current !== mySessionId) return;
       console.error("Tap-to-Pay error:", e);
+      if (getTapToPayErrorCode(e) === "NFC_UNSUPPORTED") {
+        setIsTapToPayAvailable(false);
+        await runLegacyCardFlow();
+        return;
+      }
       if (shouldFallbackAfterTapError(e)) {
         await runLegacyCardFlow();
         return;
@@ -514,6 +536,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
 
       if (errorCode === "NFC_UNSUPPORTED") {
         setIsTapToPayAvailable(false);
+        await runLegacyCardFlow();
         return;
       }
 
