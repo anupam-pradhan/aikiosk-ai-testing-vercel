@@ -91,6 +91,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
   const [cardErrorMessage, setCardErrorMessage] = useState("");
   const [cardErrorCode, setCardErrorCode] = useState("");
   const [nativeStatusLog, setNativeStatusLog] = useState("");
+  const [isTapToPayAvailable, setIsTapToPayAvailable] = useState(true);
   const [tapSuccess, setTapSuccess] = useState<{
     paymentIntentId?: string;
     amountMinor?: number;
@@ -112,6 +113,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       payload?.code ||
       payload?.data?.errorCode ||
       payload?.errorCode ||
+      payload?.data?.reason ||
+      payload?.reason ||
       "";
     if (code) return String(code);
     const rawMessage = String(
@@ -272,6 +275,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       handleCashConfirm();
       return;
     }
+    if (!isTapToPayAvailable) {
+      await runLegacyCardFlow();
+      return;
+    }
     setCardErrorMessage("");
     setCardErrorCode("");
     const mySessionId = `session-${Date.now()}`;
@@ -378,6 +385,10 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
   const handleCardTryAgain = async () => {
     if (!cart.length) {
       setCardStatus("idle");
+      return;
+    }
+    if (!isTapToPayAvailable) {
+      await runLegacyCardFlow();
       return;
     }
     setCardErrorMessage("");
@@ -500,6 +511,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ onBack }) => {
       );
       const amountMinor = data?.amount ?? data?.data?.amount;
       const currency = data?.currency || data?.data?.currency;
+
+      if (errorCode === "NFC_UNSUPPORTED") {
+        setIsTapToPayAvailable(false);
+        return;
+      }
 
       const sessionId = pendingTapSession.current;
       if (!sessionId || activeCardSession.current !== sessionId) return;
