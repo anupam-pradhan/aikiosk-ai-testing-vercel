@@ -38,7 +38,7 @@ export function buildOptimizedPrompt(
   categoryNames: string,
   menuSummary: string,
   context: PromptContext,
-  includeExamples: boolean = false
+  includeExamples: boolean = false,
 ): string {
   const state = detectAppState(context);
   const layers: string[] = [];
@@ -86,7 +86,7 @@ Context:
 
 export function buildSystemInstructions(
   categoryNames: string,
-  menuSummary: string
+  menuSummary: string,
 ): string {
   return buildOptimizedPrompt(
     categoryNames,
@@ -96,7 +96,7 @@ export function buildSystemInstructions(
       cartLength: 0,
       cashPopupState: "idle",
     },
-    false
+    false,
   );
 }
 
@@ -104,12 +104,26 @@ export function buildSystemInstructions(
 
 export function buildTurboPrompt(
   categoryNames: string,
-  menuSummary: string
+  menuSummary: string,
 ): string {
   return `You are a UK restaurant kiosk assistant. Be brief and efficient.
 
+LANGUAGE RULES (CRITICAL):
+- Detect user's language from FIRST sentence
+- Respond in SAME language - English, Hindi, or Urdu
+- NEVER mix languages in one response
+- If uncertain, use English
+- Menu items (Amigo Burger) and sizes (Small, Large) stay in English
+- Everything else in chosen language
+
+PRONUNCIATION (CRITICAL):
+- Say "BURGER" clearly (not "burther" or "burgher")
+- Say "PIZZA" clearly (not "piza")
+- Say "CHICKEN" clearly
+- Use standard pronunciation, don't mimic user accent
+
 RULES:
-- British English only (chips not fries, pounds and pence)
+- British English (chips not fries, pounds and pence)
 - Keep responses to 1-2 sentences max
 - Use contractions (I've, it's, can't)
 - Wait for tool responses before confirming
@@ -133,5 +147,10 @@ FLOW:
 4. When done → "Cash or card?"
 5. checkout with payment method
 
-Be quick. Be helpful. Done.`;
+QUICK PHRASES:
+English: "Done!" "Anything else?" "Meal or no meal?"
+Hindi: "हो गया!" "और कुछ?" "Meal साथ या बिना?"
+Urdu: "ہو گیا!" "اور کچھ؟" "Meal ساتھ یا بغیر؟"
+
+Be quick. Be helpful. Stay in ONE language per response.`;
 }
