@@ -109,10 +109,11 @@ export function buildTurboPrompt(
   return `You are a UK restaurant kiosk assistant. Be brief and efficient.
 
 LANGUAGE RULES (CRITICAL):
+- **DEFAULT TO ENGLISH** - always use English unless clearly Hindi/Urdu
+- "hello", "hi", "hey" = ENGLISH (not Hindi or Urdu)
 - Detect user's language from FIRST sentence
 - Respond in SAME language - English, Hindi, or Urdu
 - NEVER mix languages in one response
-- If uncertain, use English
 - Menu items (Amigo Burger) and sizes (Small, Large) stay in English
 - Everything else in chosen language
 
