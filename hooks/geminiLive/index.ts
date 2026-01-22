@@ -69,7 +69,7 @@ export const useGeminiLive = () => {
 
   const processedToolIds = useRef(new Set());
   const dedupeTracker = useRef(
-    createDeduplicationTracker(ADD_DEDUPE_WINDOW_MS)
+    createDeduplicationTracker(ADD_DEDUPE_WINDOW_MS),
   );
 
   // Screen context gating
@@ -96,7 +96,7 @@ export const useGeminiLive = () => {
     sourcesRef,
     isSpeakingRef,
     setIsSpeaking,
-    derr
+    derr,
   );
 
   const disconnect = useCallback(async () => {
@@ -146,7 +146,7 @@ export const useGeminiLive = () => {
     triggerAnimation,
     dlog,
     dwarn,
-    derr
+    derr,
   );
 
   /**
@@ -215,12 +215,12 @@ export const useGeminiLive = () => {
       audioQueueRef.current.push(pcm);
       drainAudioQueue();
     },
-    [drainAudioQueue]
+    [drainAudioQueue],
   );
 
   // recorder returns forceFlush (kept, but not used for stream ending now)
   const { startRecording, stopRecording, isRecording } = useAudioRecorder(
-    async (pcm) => onAudioInput(pcm)
+    async (pcm) => onAudioInput(pcm),
   );
 
   /**
@@ -238,7 +238,7 @@ export const useGeminiLive = () => {
       }
       session.sendRealtimeInput([{ text }]);
     },
-    { minIntervalMs: 800, sendInitialSnapshot: true }
+    { minIntervalMs: 800, sendInitialSnapshot: true },
   );
 
   const connect = useCallback(async () => {
@@ -269,25 +269,17 @@ export const useGeminiLive = () => {
         model: MODEL,
         config: {
           responseModalities: [Modality.AUDIO],
-
-          // Use TURBO prompt for speed, or full prompt for accuracy
           systemInstruction: TURBO_MODE
             ? buildTurboPrompt(ctxData.names, ctxData.summary)
             : buildSystemInstructions(ctxData.names, ctxData.summary),
 
           tools: [{ functionDeclarations: tools }],
-
-          // ABSOLUTE MAXIMUM SPEED - Ultra-aggressive turn detection
+          temperature: 0.3, // Even more deterministic = faster
           realtimeInputConfig: {
             automaticActivityDetection: {
-              silenceDurationMs: 80, // MINIMUM - instant turn detection
-              prefixPaddingMs: 20, // MINIMUM - near-zero delay
-              // endOfSpeechSensitivity: "END_SENSITIVITY_HIGH", // Fastest end detection
+              silenceDurationMs: 80,
+              prefixPaddingMs: 20,
             },
-          },
-          // Faster, more decisive generation
-          generationConfig: {
-            temperature: 0.3, // Even more deterministic = faster
           },
           speechConfig: {
             voiceConfig: {

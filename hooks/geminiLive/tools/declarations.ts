@@ -40,7 +40,8 @@ export const tools: FunctionDeclaration[] = [
         },
         modifierName: {
           type: Type.STRING,
-          description: "The name of the modifier/topping to look up (e.g., 'Extra Cheese', 'Drink', 'Onion').",
+          description:
+            "The name of the modifier/topping to look up (e.g., 'Extra Cheese', 'Drink', 'Onion').",
         },
       },
       required: ["itemName", "modifierName"],
@@ -55,27 +56,35 @@ export const tools: FunctionDeclaration[] = [
       properties: {
         itemName: {
           type: Type.STRING,
-          description: "Name of the item in cart to edit. Can be partial (e.g., 'burger' matches 'Amigo Burger').",
+          description:
+            "Name of the item in cart to edit. Can be partial (e.g., 'burger' matches 'Amigo Burger').",
         },
         variantName: {
           type: Type.STRING,
-          description: "New variant to switch to (e.g. 'With Meal', 'Large'). Leave empty if not changing variant.",
+          description:
+            "New variant to switch to (e.g. 'With Meal', 'Large'). Leave empty if not changing variant.",
         },
         modifiersToAdd: {
           type: Type.ARRAY,
           items: { type: Type.STRING },
-          description: "Deprecated: Use modifierUpdates for more control. Simple list of modifiers to add.",
+          description:
+            "Deprecated: Use modifierUpdates for more control. Simple list of modifiers to add.",
         },
         modifierUpdates: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "Name of modifier" },
-                    quantity: { type: Type.INTEGER, description: "Target quantity (0 to remove, 1 for single, 2 for double, etc.)" }
-                }
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING, description: "Name of modifier" },
+              quantity: {
+                type: Type.INTEGER,
+                description:
+                  "Target quantity (0 to remove, 1 for single, 2 for double, etc.)",
+              },
             },
-            description: "List of specific updates to apply. Example: [{name: 'Cucumber', quantity: 1}, {name: 'Onions', quantity: 0}]"
+          },
+          description:
+            "List of specific updates to apply. Example: [{name: 'Cucumber', quantity: 1}, {name: 'Onions', quantity: 0}]",
         },
         note: {
           type: Type.STRING,
@@ -86,12 +95,13 @@ export const tools: FunctionDeclaration[] = [
     },
   },
   {
-      name: "confirmSelection",
-      description: "Finalize the current item customization and add it to cart. Use when user says 'that's it', 'add it', 'done', 'looks good', or 'next'. Mimics the 'Add to Cart' / 'Next' button.",
-      parameters: {
-          type: Type.OBJECT,
-          properties: {},
-      }
+    name: "confirmSelection",
+    description:
+      "Finalize the current item customization and add it to cart. Use when user says 'that's it', 'add it', 'done', 'looks good', or 'next'. Mimics the 'Add to Cart' / 'Next' button.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {},
+    },
   },
   {
     name: "addToCart",
@@ -137,12 +147,13 @@ and let the kiosk ask them on screen.
           type: Type.STRING,
           enum: ["add", "show"],
           description:
-            "Set to 'show' if the user just wants to see/highlight the item (e.g., 'Show me X'). Set to 'add' if they intent to buy it (default).",
+            "Set to 'show' if the user just wants to see/highlight the item (e.g., 'Show me X', 'What's X'). Set to 'add' if they want to order it or check availability (e.g., 'Do you have X?', 'I want X') (default).",
         },
         allowDuplicate: {
-            type: Type.BOOLEAN,
-            description: "Set to true if the user explicitly confirms adding a duplicate item (e.g., 'Yes, add another', 'I want two'). Default is false, which triggers a check.",
-        }
+          type: Type.BOOLEAN,
+          description:
+            "Set to true if the user explicitly confirms adding a duplicate item (e.g., 'Yes, add another', 'I want two'). Default is false, which triggers a check.",
+        },
       },
       required: ["itemName"],
     },
@@ -168,7 +179,8 @@ and let the kiosk ask them on screen.
   },
   {
     name: "showCart",
-    description: "Get a text summary of the current cart contents and total price.",
+    description:
+      "Get a text summary of the current cart contents and total price.",
     parameters: { type: Type.OBJECT, properties: {} },
   },
   {
@@ -225,7 +237,8 @@ DO NOT use addToCart if the user clearly wants to customize - use this instead.
       properties: {
         itemName: {
           type: Type.STRING,
-          description: "Name of the item to start customizing (e.g., 'Amigo Burger', 'Margherita Pizza')",
+          description:
+            "Name of the item to start customizing (e.g., 'Amigo Burger', 'Margherita Pizza')",
         },
       },
       required: ["itemName"],
@@ -250,7 +263,8 @@ PREREQUISITE: An item wizard must be active. If not, use startItemFlow first.
       properties: {
         variantName: {
           type: Type.STRING,
-          description: "Exact name of the variant to select (e.g., 'With Meal', 'No Meal', 'Small', 'Large', '9 Inch', '12 Inch')",
+          description:
+            "Exact name of the variant to select (e.g., 'With Meal', 'No Meal', 'Small', 'Large', '9 Inch', '12 Inch')",
         },
       },
       required: ["variantName"],
@@ -277,11 +291,13 @@ PREREQUISITE: The modifier screen must be active. If not active, this will fail.
       properties: {
         modifierName: {
           type: Type.STRING,
-          description: "Name of the modifier/topping to toggle (e.g., 'Extra Cheese', 'Onions', 'Pepperoni', 'Bacon')",
+          description:
+            "Name of the modifier/topping to toggle (e.g., 'Extra Cheese', 'Onions', 'Pepperoni', 'Bacon')",
         },
         quantity: {
           type: Type.INTEGER,
-          description: "Optional quantity to set (e.g., 2 for double, 0 to remove). If omitted, defaults to 1 for add or 0 for remove (toggle logic).",
+          description:
+            "Optional quantity to set (e.g., 2 for double, 0 to remove). If omitted, defaults to 1 for add or 0 for remove (toggle logic).",
         },
       },
       required: ["modifierName"],
@@ -311,7 +327,8 @@ This increases or decreases the quantity of a selected modifier.
         },
         quantity: {
           type: Type.INTEGER,
-          description: "New total quantity for this modifier (e.g., 2 for double, 3 for triple)",
+          description:
+            "New total quantity for this modifier (e.g., 2 for double, 3 for triple)",
         },
       },
       required: ["modifierName", "quantity"],
@@ -345,13 +362,15 @@ Use the closest matching category from the menu.
   },
   {
     name: "removeFromCart",
-    description: "Remove a specific item from the cart. Use when user says 'remove the burger', 'delete the pizza', 'I don't want the coke'.",
+    description:
+      "Remove a specific item from the cart. Use when user says 'remove the burger', 'delete the pizza', 'I don't want the coke'.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         itemName: {
           type: Type.STRING,
-          description: "Name of the item to remove (e.g. 'margherita', 'burger').",
+          description:
+            "Name of the item to remove (e.g. 'margherita', 'burger').",
         },
       },
       required: ["itemName"],
@@ -359,7 +378,8 @@ Use the closest matching category from the menu.
   },
   {
     name: "updateCartItemQuantity",
-    description: "Update the quantity of an item already in the cart. Use when user says 'make that 2 burgers', 'add another coke', 'remove one pizza'.",
+    description:
+      "Update the quantity of an item already in the cart. Use when user says 'make that 2 burgers', 'add another coke', 'remove one pizza'.",
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -369,7 +389,8 @@ Use the closest matching category from the menu.
         },
         quantity: {
           type: Type.INTEGER,
-          description: "The NEW total quantity desired (e.g. 2, 3). If user says 'add another', calculate current + 1. If 0, removes item.",
+          description:
+            "The NEW total quantity desired (e.g. 2, 3). If user says 'add another', calculate current + 1. If 0, removes item.",
         },
       },
       required: ["itemName", "quantity"],
