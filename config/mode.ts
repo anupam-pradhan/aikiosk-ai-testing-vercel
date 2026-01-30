@@ -8,3 +8,5 @@ export const NEEDS_CHECKOUT_FLOW =
   APP_MODE === "pos" || APP_MODE === "mobilekiosk";
 export const REQUIRES_OTP = APP_MODE === null;
 export const IS_MOBILEKIOSK = APP_MODE === "mobilekiosk";
+
+//pos, largekiosk,kiosk
