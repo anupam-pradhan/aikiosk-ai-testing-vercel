@@ -56,6 +56,7 @@ export const useGeminiLive = () => {
 
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
 
   const isSpeakingRef = useRef(false);
   const outputContextRef = useRef(null);
@@ -81,7 +82,7 @@ export const useGeminiLive = () => {
   const drainingRef = useRef(false);
 
   const { logs, clearLogs, dlog, dwarn, derr } = useLogger();
-  const { lastLatencyMs, markUserAudioActivity, resetLatency } =
+  const { lastLatencyMs, markUserAudioActivity, markModelFirstResponse, resetLatency } =
     useLatencyTracking();
 
   useEffect(() => {
@@ -134,6 +135,7 @@ export const useGeminiLive = () => {
     pendingScreenTextRef.current = null;
     audioQueueRef.current = [];
     drainingRef.current = false;
+    setIsThinking(false); // Reset thinking state on disconnect
   }, [resetLatency]);
 
   const { handleToolCall } = createToolHandler(
@@ -164,7 +166,7 @@ export const useGeminiLive = () => {
         const session = sessionRef.current;
         if (!session) break;
 
-        const batch = audioQueueRef.current.splice(0, 4);
+        const batch = audioQueueRef.current.splice(0, 2);
 
         // Merge into one Int16Array
         const mergedLen = batch.reduce((a, b) => a + b.length, 0);
@@ -186,6 +188,7 @@ export const useGeminiLive = () => {
         });
 
         markUserAudioActivity();
+        setIsThinking(true);
 
         // Gate screen context until at least 1 audio packet is sent
         if (!hasSentAudioRef.current) {
@@ -320,6 +323,8 @@ export const useGeminiLive = () => {
           },
 
           onmessage: (msg) => {
+            markModelFirstResponse();
+            setIsThinking(false); // Reset thinking state when a response is received
             // Play audio immediately - never block on tool execution
             const audio =
               msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
@@ -359,6 +364,7 @@ export const useGeminiLive = () => {
   return {
     isConnected,
     isSpeaking,
+    isThinking,
     isRecording,
     connect,
     disconnect,

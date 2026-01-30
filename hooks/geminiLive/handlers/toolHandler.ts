@@ -191,9 +191,11 @@ export const createToolHandler = (
                 ctx.setSelectedCategory(category);
                 dlog("Auto-switched to category:", category.name);
                 // Wait for category to render
-                await new Promise((resolve) =>
-                  setTimeout(resolve, CATEGORY_SWITCH_DELAY_MS)
-                );
+                if (CATEGORY_SWITCH_DELAY_MS > 0) {
+                  await new Promise((resolve) =>
+                    setTimeout(resolve, CATEGORY_SWITCH_DELAY_MS)
+                  );
+                }
               } catch (e) {
                 derr("Error switching to item category", e);
               }
@@ -217,16 +219,20 @@ export const createToolHandler = (
                     ctx.highlightItem(item);
                   result = `SHOWING_ITEM:${item.name}`;
                 } else {
-                  if (item.id) {
+                  if (item.id && ANIMATION_DELAY_MS > 0) {
                     triggerAnimation(item.id);
                     await new Promise((resolve) =>
                       setTimeout(resolve, ANIMATION_DELAY_MS)
                     );
+                  } else if (item.id) {
+                    triggerAnimation(item.id);
                   }
                   ctx.startItemFlow(item);
-                  await new Promise((resolve) =>
-                    setTimeout(resolve, UI_SYNC_DELAY_MS)
-                  );
+                  if (UI_SYNC_DELAY_MS > 0) {
+                    await new Promise((resolve) =>
+                      setTimeout(resolve, UI_SYNC_DELAY_MS)
+                    );
+                  }
                   if (
                     fc.args?.note &&
                     typeof ctx.setActiveNote === "function"
@@ -252,11 +258,13 @@ export const createToolHandler = (
                   ) || null;
 
                 if (!targetVariant) {
-                  if (item.id) {
+                  if (item.id && ANIMATION_DELAY_MS > 0) {
                     triggerAnimation(item.id);
                     await new Promise((resolve) =>
                       setTimeout(resolve, ANIMATION_DELAY_MS)
                     );
+                  } else if (item.id) {
+                    triggerAnimation(item.id);
                   }
                   try {
                     ctx.startItemFlow(item);
@@ -300,30 +308,38 @@ export const createToolHandler = (
                       result = `SHOWING_ITEM:${item.name}`;
                     } else {
                       dlog("Opening modifier flow for:", item.name);
-                      if (item.id) {
+                      if (item.id && ANIMATION_DELAY_MS > 0) {
                         triggerAnimation(item.id);
                         await new Promise((resolve) =>
                           setTimeout(resolve, ANIMATION_DELAY_MS)
                         );
+                      } else if (item.id) {
+                        triggerAnimation(item.id);
                       }
                       ctx.startItemFlow(item);
-                      await new Promise((resolve) =>
-                        setTimeout(resolve, UI_SYNC_DELAY_MS)
-                      );
+                      if (UI_SYNC_DELAY_MS > 0) {
+                        await new Promise((resolve) =>
+                          setTimeout(resolve, UI_SYNC_DELAY_MS)
+                        );
+                      }
                       if (
                         typeof ctx.selectVariant === "function" &&
                         targetVariant
                       ) {
-                        if (targetVariant.id) {
+                        if (targetVariant.id && ANIMATION_DELAY_MS > 0) {
                           triggerAnimation(targetVariant.id);
                           await new Promise((resolve) =>
                             setTimeout(resolve, ANIMATION_DELAY_MS)
                           );
+                        } else if (targetVariant.id) {
+                          triggerAnimation(targetVariant.id);
                         }
                         ctx.selectVariant(targetVariant);
-                        await new Promise((resolve) =>
-                          setTimeout(resolve, UI_SYNC_DELAY_MS)
-                        );
+                        if (UI_SYNC_DELAY_MS > 0) {
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, UI_SYNC_DELAY_MS)
+                          );
+                        }
                       }
                       if (
                         fc.args?.note &&
@@ -542,11 +558,13 @@ export const createToolHandler = (
                         hasVariants || hasMods || isAlreadyActive;
 
                       if (hasVariants) {
-                        if (item.id) {
+                        if (item.id && ANIMATION_DELAY_MS > 0) {
                           triggerAnimation(item.id);
                           await new Promise((resolve) =>
                             setTimeout(resolve, ANIMATION_DELAY_MS)
                           );
+                        } else if (item.id) {
+                          triggerAnimation(item.id);
                         }
                         ctx.startItemFlow(item);
 
@@ -555,11 +573,13 @@ export const createToolHandler = (
                           .join(", ");
                         result = `SELECT_VARIANT:${item.name} (Options: ${variantNames})`;
                       } else if (hasMods) {
-                        if (item.id) {
+                        if (item.id && ANIMATION_DELAY_MS > 0) {
                           triggerAnimation(item.id);
                           await new Promise((resolve) =>
                             setTimeout(resolve, ANIMATION_DELAY_MS)
                           );
+                        } else if (item.id) {
+                          triggerAnimation(item.id);
                         }
                         ctx.startItemFlow(item);
                         result = `SELECT_MODIFIERS:${item.name}`;
@@ -637,7 +657,14 @@ export const createToolHandler = (
           );
 
         if (cartItem) {
-          if (cartItem.id) triggerAnimation(cartItem.id);
+          if (cartItem.id && ANIMATION_DELAY_MS > 0) {
+            triggerAnimation(cartItem.id);
+            await new Promise((resolve) =>
+              setTimeout(resolve, ANIMATION_DELAY_MS)
+            );
+          } else if (cartItem.id) {
+            triggerAnimation(cartItem.id);
+          }
           const itemInfo = resolveItemInfo(ctx, cartItem.name, dlog);
           if (
             itemInfo?.item &&
@@ -885,7 +912,9 @@ export const createToolHandler = (
           window.dispatchEvent(new CustomEvent("show-payment-options"));
         }
 
-        await new Promise((resolve) => setTimeout(resolve, UI_SYNC_DELAY_MS));
+        if (UI_SYNC_DELAY_MS > 0) {
+          await new Promise((resolve) => setTimeout(resolve, UI_SYNC_DELAY_MS));
+        }
 
         const cart = ctx.cart || [];
         const total = cart.reduce(
@@ -976,11 +1005,13 @@ export const createToolHandler = (
         result = `ITEM_NOT_FOUND:${itemName}`;
       } else {
         const { item, category } = itemInfo;
-        if (item.id) {
+        if (item.id && ANIMATION_DELAY_MS > 0) {
           triggerAnimation(item.id);
           await new Promise((resolve) =>
             setTimeout(resolve, ANIMATION_DELAY_MS)
           );
+        } else if (item.id) {
+          triggerAnimation(item.id);
         }
 
         if (category && category.id !== ctx.selectedCategory?.id) {
@@ -1043,7 +1074,14 @@ export const createToolHandler = (
         result = "ERROR:No active item. Use startItemFlow first.";
       } else {
         const item = ctx.activeItem;
-        if (item.id) triggerAnimation(item.id);
+        if (item.id && ANIMATION_DELAY_MS > 0) {
+          triggerAnimation(item.id);
+          await new Promise((resolve) =>
+            setTimeout(resolve, ANIMATION_DELAY_MS)
+          );
+        } else if (item.id) {
+          triggerAnimation(item.id);
+        }
         const variants = Array.isArray(item.variantlist)
           ? item.variantlist
           : [];
@@ -1060,11 +1098,13 @@ export const createToolHandler = (
           result = `VARIANT_NOT_FOUND:${variantName}. Available: ${availableVariants}`;
         } else {
           try {
-            if (targetVariant.id) {
+            if (targetVariant.id && ANIMATION_DELAY_MS > 0) {
               triggerAnimation(targetVariant.id);
               await new Promise((resolve) =>
                 setTimeout(resolve, ANIMATION_DELAY_MS)
               );
+            } else if (targetVariant.id) {
+              triggerAnimation(targetVariant.id);
             }
             ctx.selectVariant(targetVariant);
 
@@ -1104,7 +1144,11 @@ export const createToolHandler = (
         result = "ERROR:No active customization. Use startItemFlow first.";
       } else {
         const variant = ctx.activeVariant;
-        if (variant.id) {
+        if (variant.id && ANIMATION_DELAY_MS > 0) {
+          setTimeout(() => {
+            triggerAnimation(String(variant.id));
+          }, 150);
+        } else if (variant.id) {
           setTimeout(() => {
             triggerAnimation(String(variant.id));
           }, 150);
@@ -1172,11 +1216,13 @@ export const createToolHandler = (
           result = `NOTE_ADDED:${modifierName}`;
         } else {
           try {
-            if (foundMod.id) {
+            if (foundMod.id && ANIMATION_DELAY_MS > 0) {
               triggerAnimation(foundMod.id);
               await new Promise((resolve) =>
                 setTimeout(resolve, ANIMATION_DELAY_MS)
               );
+            } else if (foundMod.id) {
+              triggerAnimation(foundMod.id);
             }
             const existingMod = ctx.activeModifiers?.find(
               (m: any) => m.id === foundMod.id
@@ -1248,11 +1294,13 @@ export const createToolHandler = (
       dlog("confirmSelection request");
       if (ctx.activeItem && typeof ctx.confirmItem === "function") {
         try {
-          if (ctx.activeItem.id) {
+          if (ctx.activeItem.id && ANIMATION_DELAY_MS > 0) {
             triggerAnimation(ctx.activeItem.id);
             await new Promise((resolve) =>
               setTimeout(resolve, ANIMATION_DELAY_MS)
             );
+          } else if (ctx.activeItem.id) {
+            triggerAnimation(ctx.activeItem.id);
           }
           ctx.confirmItem();
           result = `ITEM_CONFIRMED:${ctx.activeItem.name}. SHOWING_CATEGORIES. ASK_ANYTHING_ELSE`;
@@ -1284,11 +1332,13 @@ export const createToolHandler = (
           result = `ERROR:${modifierName} not selected. Use toggleModifier first.`;
         } else {
           try {
-            if (activeMod.id) {
+            if (activeMod.id && ANIMATION_DELAY_MS > 0) {
               triggerAnimation(activeMod.id);
               await new Promise((resolve) =>
                 setTimeout(resolve, ANIMATION_DELAY_MS)
               );
+            } else if (activeMod.id) {
+              triggerAnimation(activeMod.id);
             }
             const delta = quantity - activeMod.modqty;
 
@@ -1315,11 +1365,13 @@ export const createToolHandler = (
 
       if (cat) {
         try {
-          if (cat.id) {
+          if (cat.id && ANIMATION_DELAY_MS > 0) {
             triggerAnimation(cat.id);
             await new Promise((resolve) =>
               setTimeout(resolve, ANIMATION_DELAY_MS)
             );
+          } else if (cat.id) {
+            triggerAnimation(cat.id);
           }
           if (typeof ctx.cancelFlow === "function") ctx.cancelFlow();
           ctx.setSelectedCategory(cat);
@@ -1340,7 +1392,11 @@ export const createToolHandler = (
         result = `ITEM_NOT_FOUND:${rawName}`;
       } else {
         const { item } = itemInfo;
-        if (item.id) {
+        if (item.id && ANIMATION_DELAY_MS > 0) {
+          setTimeout(() => {
+            triggerAnimation(String(item.id));
+          }, 150);
+        } else if (item.id) {
           setTimeout(() => {
             triggerAnimation(String(item.id));
           }, 150);
@@ -1378,7 +1434,11 @@ export const createToolHandler = (
         result = `ITEM_NOT_FOUND:${itemName}`;
       } else {
         const { item } = itemInfo;
-        if (item.id) {
+        if (item.id && ANIMATION_DELAY_MS > 0) {
+          setTimeout(() => {
+            triggerAnimation(String(item.id));
+          }, 150);
+        } else if (item.id) {
           setTimeout(() => {
             triggerAnimation(String(item.id));
           }, 150);
@@ -1397,7 +1457,11 @@ export const createToolHandler = (
 
             if (mod) {
               foundModifier = mod;
-              if (mod.id) triggerAnimation(mod.id);
+              if (mod.id && ANIMATION_DELAY_MS > 0) {
+                triggerAnimation(mod.id);
+              } else if (mod.id) {
+                triggerAnimation(mod.id);
+              }
               foundInVariant = variant;
               break;
             }
@@ -1448,11 +1512,13 @@ export const createToolHandler = (
       } else {
         try {
           if (typeof ctx.removeFromCart === "function") {
-            if (cartItem.id) {
+            if (cartItem.id && ANIMATION_DELAY_MS > 0) {
               triggerAnimation(cartItem.id);
               await new Promise((resolve) =>
                 setTimeout(resolve, ANIMATION_DELAY_MS)
               );
+            } else if (cartItem.id) {
+              triggerAnimation(cartItem.id);
             }
             ctx.removeFromCart(cartItem.cartId);
             result = `REMOVED:${cartItem.name}`;
@@ -1486,11 +1552,13 @@ export const createToolHandler = (
         result = `ITEM_NOT_IN_CART:${itemName}`;
       } else {
         try {
-          if (cartItem.id) {
+          if (cartItem.id && ANIMATION_DELAY_MS > 0) {
             triggerAnimation(cartItem.id);
             await new Promise((resolve) =>
               setTimeout(resolve, ANIMATION_DELAY_MS)
             );
+          } else if (cartItem.id) {
+            triggerAnimation(cartItem.id);
           }
           const currentQty = cartItem.qty;
           const delta = newQty - currentQty;
