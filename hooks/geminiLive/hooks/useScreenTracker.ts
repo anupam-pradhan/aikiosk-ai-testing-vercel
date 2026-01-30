@@ -22,7 +22,7 @@ interface ScreenTrackerOptions {
 export const useScreenTracker = (
   isConnected: boolean,
   sendTextContext: (text: string) => void,
-  options: ScreenTrackerOptions = {}
+  options: ScreenTrackerOptions = {},
 ) => {
   const {
     selectedCategory,
@@ -74,7 +74,7 @@ export const useScreenTracker = (
         sendTextContext(payload);
       } catch {}
     },
-    [isConnected, sendTextContext]
+    [isConnected, sendTextContext],
   );
 
   const buildSnapshot = useCallback(() => {

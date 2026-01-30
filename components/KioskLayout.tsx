@@ -18,7 +18,7 @@ type MobileView = "categories" | "items" | "cart";
 const INACTIVITY_MS = 2000_000;
 
 const KioskLayout: React.FC = () => {
-  const { isConnected, isSpeaking, connect, disconnect, logs } =
+  const { isConnected, isSpeaking, isThinking, connect, disconnect, logs } =
     useGeminiLive();
 
   const {
@@ -596,7 +596,7 @@ const KioskLayout: React.FC = () => {
 
               {isConnected ? (
                 <span className="flex items-center gap-2">
-                  {isSpeaking && (
+                  {(isSpeaking || isThinking) && (
                     <span className="flex gap-1">
                       <span
                         className="h-1 w-1 bg-white rounded-full animate-bounce"
@@ -612,7 +612,7 @@ const KioskLayout: React.FC = () => {
                       ></span>
                     </span>
                   )}
-                  Listening... (Tap to Stop)
+                  {isThinking ? "Thinking..." : isSpeaking ? "Speaking..." : "Listening..."} (Tap to Stop)
                 </span>
               ) : (
                 <span>Tap to Order</span>

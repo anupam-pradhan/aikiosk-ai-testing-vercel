@@ -121,11 +121,11 @@ export const useAudioRecorder = (onDataAvailable) => {
 
     // Only flush partial when we are idle (speech pause/end)
     // This reduces constant silence flooding.
-    if (idleMs < 120) return;
+    if (idleMs < 40) return;
 
     // Avoid flushing tiny fragments repeatedly
     // Require at least one frame worth of samples, OR if stale flush anyway.
-    const isStale = now - (lastFlushAtRef.current || 0) > 250;
+    const isStale = now - (lastFlushAtRef.current || 0) > 100;
     if (filled < FRAME_SAMPLES && !isStale) return;
 
     lastFlushAtRef.current = now;
